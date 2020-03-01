@@ -118,12 +118,12 @@ sub munge_file {
         $list = ${"$pkg\::LIST"};
     }
 
-  CHECK: {
+  CHECK_LIST: {
         $self->log_fatal("List does not have 'entries' property")
             unless $list->{entries};
         $self->log_fatal("List does not have any entries")
             unless @{ $list->{entries} };
-    } # CHECK
+    } # CHECK_LIST
 
   ADD_X_MENTIONS_PREREQS:
     {
