@@ -1,6 +1,8 @@
 package Dist::Zilla::Plugin::Acme::CPANModules;
 
+# AUTHORITY
 # DATE
+# DIST
 # VERSION
 
 use 5.010001;
@@ -103,17 +105,28 @@ sub munge_file {
 
     my $abstract = $self->_get_abstract_from_list_summary($file->name, $file->content);
 
+    my $pkg = do {
+        my $pkg = $file->name;
+        $pkg =~ s!^lib/!!;
+        $pkg =~ s!\.pm$!!;
+        $pkg =~ s!/!::!g;
+        $pkg;
+    };
+    my $list;
+    {
+        no strict 'refs';
+        $list = ${"$pkg\::LIST"};
+    }
+
+  CHECK: {
+        $self->log_fatal("List does not have 'entries' property")
+            unless $list->{entries};
+        $self->log_fatal("List does not have any entries")
+            unless @{ $list->{entries} };
+    } # CHECK
+
   ADD_X_MENTIONS_PREREQS:
     {
-        my $pkg = do {
-            my $pkg = $file->name;
-            $pkg =~ s!^lib/!!;
-            $pkg =~ s!\.pm$!!;
-            $pkg =~ s!/!::!g;
-            $pkg;
-        };
-        no strict 'refs';
-        my $list = ${"$pkg\::LIST"};
         my @mods;
         for my $entry (@{ $list->{entries} }) {
             push @mods, $entry->{module};
@@ -128,7 +141,7 @@ sub munge_file {
             $self->zilla->register_prereqs(
                 {phase=>'x_mentions', type=>'x_mentions'}, $mod, 0);
         }
-    }
+    } # ADD_X_MENTIONS_PREREQS
 
   SET_ABSTRACT:
     {
@@ -137,7 +150,7 @@ sub munge_file {
             or die "Can't insert abstract for " . $file->name;
         $self->log(["inserting abstract for %s (%s)", $file->name, $abstract]);
         $file->content($content);
-    }
+    } # SET_ABSTRACT
 }
 
 __PACKAGE__->meta->make_immutable;
@@ -159,6 +172,8 @@ This plugin is to be used when building C<Acme::CPANModules::*> distribution. It
 currently does the following:
 
 =over
+
+=item * Abort the build if there are no entries in $LIST
 
 =item * Fill the Abstract from list's summary
 
