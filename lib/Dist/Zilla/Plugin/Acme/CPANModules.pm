@@ -103,6 +103,8 @@ sub munge_file {
         return;
     }
 
+    $self->log_debug(["Processing %s ...", $file->name]);
+
     my $abstract = $self->_get_abstract_from_list_summary($file->name, $file->content);
 
     my $pkg = do {
